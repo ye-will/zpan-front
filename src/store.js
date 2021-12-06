@@ -3,10 +3,26 @@ import Vuex from 'vuex'
 
 Vue.use(Vuex)
 
+const moduleUploader = {
+  namespaced: true,
+  state: () => ({
+    successCount: 0,
+    dirUploadSupport: false
+  }),
+  mutations: {
+    uploadSuccess(state) {
+      state.successCount += 1
+    },
+    dirUploadSupport(state, support) {
+      state.dirUploadSupport = support
+    }
+  }
+}
+
 export default new Vuex.Store({
   state: {
     storages: [],
-    cs: {}
+    cs: {},
   },
   mutations: {
     storages(state, storages) {
@@ -14,7 +30,10 @@ export default new Vuex.Store({
     },
     cs(state, cs) {
       state.cs = cs
-    }
+    },
   },
-  actions: {}
+  actions: {},
+  modules: {
+    uploader: moduleUploader
+  }
 })

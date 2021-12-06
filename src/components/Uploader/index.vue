@@ -2,9 +2,24 @@
   <div class="uploader">
     <div style="display: flex; justify-content: space-between">
       <h5>{{ title }}</h5>
-      <file-upload ref="upload" v-model="files" :multiple="true" :maximum="50" @input-filter="inputFilter" @input-file="inputFile"> </file-upload>
+      <file-upload style="visibility: hidden;"
+        ref="upload"
+        input-id="file-uploader"
+        v-model="files"
+        :custom-action="doUpload"
+        :multiple="true"
+        :directory="isDirectory"
+        :thread="3"
+        @input-file="inputFile">
+      </file-upload>
     </div>
-    <el-table :data="files" size="mini" :show-header="false" empty-text="暂无上传任务" style="width: 100%">
+    <el-table
+      :data="files"
+      size="mini"
+      :show-header="false"
+      :empty-text="$t('uploader.no-tasks')"
+      style="width: 100%; max-height: 600px; overflow-y: auto;"
+    >
       <el-table-column prop="icon" width="50">
         <template slot-scope="scope">
           <i :class="`iconfont matter-icon ${type2icon(scope.row.type)}`"></i>
@@ -30,7 +45,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <div class="tip">- 仅展示本次上传任务 -</div>
+    <div class="tip">- {{ $t("uploader.upload-hint") }} -</div>
   </div>
 </template>
 
@@ -46,24 +61,20 @@ export default {
       sid: 0,
       dist: "",
       files: [],
-      uploading: false,
-      uploadedCnt: 0,
+      isDirectory: false,
     };
-  },
-  watch: {
-    files(nv) {
-      this.$emit("utotal-change", nv.length);
-    },
   },
   computed: {
     title() {
-      let text = this.uploading ? "正在上传" : "上传完成";
-      return `${text}（${this.uploadedCnt}/${this.files.length}）`;
-    },
+      const uploadedCnt = this.$store.state.uploader.successCount;
+      const text = (this.$refs.upload && this.$refs.upload.uploaded)
+        ? this.$t("uploader.upload-in-progress")
+        : this.$t("uploader.upload-done");
+      return `${text}（${uploadedCnt}/${this.files.length}）`;
+    }
   },
   methods: {
     type2icon(type) {
-      console.log(type);
       let [t1, t2] = type.split("/");
       let mt = ["pdf", "html", "xml", "psd", "rtf"];
       if (mt.includes(t2)) {
@@ -100,68 +111,37 @@ export default {
     uploadSelect(obj) {
       this.sid = obj.sid;
       this.dist = obj.dist;
-      console.log(obj);
-      if (!this.$refs.upload.features.directory) {
-        this.alert("Your browser does not support");
-        return;
-      }
-
-      let input = document.createElement("input");
-      input.setAttribute("type", "file");
-      input.setAttribute("style", "display: none");
-      input.setAttribute("multiple", true);
-      if (obj.type == "folder") {
-        input.setAttribute("allowdirs", true);
-        input.setAttribute("directory", true);
-        input.setAttribute("webkitdirectory", true);
-      }
-      document.querySelector("body").appendChild(input);
-      input.click();
-      input.onchange = (e) => {
-        this.$refs.upload.addInputFile(input);
-        document.querySelector("body").removeChild(input);
-      };
+      this.isDirectory = obj.type === "folder";
+      setTimeout(() => document.getElementById("file-uploader").click())
     },
-    inputFilter(newFile, oldFile, prevent) {},
+    doUpload(file) {
+      const updateFile = state => this.$refs.upload.update(file, state)
+      return this.$zpan.File.create(this.sid, this.dist, file, updateFile)
+        .then(() => updateFile({
+            progress: "100.00",
+            success: true
+        }) || Promise.reject(new Error("update file error")))
+    },
     inputFile(newFile, oldFile) {
-      if (newFile && oldFile && !newFile.active && oldFile.active) {
-        // 获得相应数据
-        console.log("response", newFile.response);
-        if (newFile.xhr) {
-          //  获得响应状态码
-          console.log("status", newFile.xhr.status);
-          this.$zpan.File.uploadDone(oldFile.matter.alias).then((ret) => {
-            this.uploadedCnt++;
-          });
-        }
-        return;
+      if (!newFile || !oldFile) {
+        this.$emit("utotal-change", this.files.length);
       }
-
-      if (!newFile && oldFile) {
-        // ignore remove event
-        return;
-      }
-
-      this.$emit("uploadAdded");
-      // Automatically activate upload
       if (Boolean(newFile) !== Boolean(oldFile) || oldFile.error !== newFile.error) {
         if (!this.$refs.upload.active) {
-          this.$zpan.File.create(this.sid, this.dist, newFile).then((ret) => {
-            newFile.putAction = ret.data.uplink;
-            newFile.headers = ret.data.headers;
-            newFile.matter = ret.data.matter;
-            this.$refs.upload.active = true;
-            this.uploading = true;
-          });
+          this.$emit("upload-added");
+          this.$refs.upload.active = true
+        }
+      }
+      if (newFile && oldFile && !newFile.active && oldFile.active) {
+        if (newFile.success) {
+          this.$store.commit("uploader/uploadSuccess")
         }
       }
     },
   },
-  mounted() {
-    this.$watch("$refs.upload.uploaded", (uploaded) => {
-      this.uploading = !uploaded;
-    });
-  },
+  mounted () {
+    this.$store.commit("uploader/dirUploadSupport", this.$refs.upload.features.directory)
+  }
 };
 </script>
 

@@ -3,7 +3,7 @@
 import axios from "axios";
 
 let utils = {
-    upload(fileObj, destURL, headers, cancel) {
+    upload(fileObj, destURL, headers, cancel) {                         // depracated
         let file = fileObj.file
         return new Promise((resolve, reject) => {
             const CancelToken = axios.CancelToken;

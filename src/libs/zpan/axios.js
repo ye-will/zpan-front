@@ -36,7 +36,7 @@ _axios.interceptors.response.use(
             msg = error.response.data.msg
         }
 
-        // alert the Notification only for the operation 
+        // alert the Notification only for the operation
         if (error.response.config.method != 'get') {
             Notification.error(msg)
         }
@@ -45,4 +45,5 @@ _axios.interceptors.response.use(
     }
 );
 
+export const rawAxios = axios;
 export default _axios

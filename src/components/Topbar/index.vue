@@ -26,7 +26,7 @@
           <el-badge v-show="ulistTotal" :value="ulistTotal" style="top: -15px"></el-badge>
         </i>
 
-        <zp-uploader ref="uploader" @uploadAdded="$refs.ulist.doShow()" @utotal-change="onUTotalChange"></zp-uploader>
+        <zp-uploader ref="uploader" @upload-added="$refs.ulist.doShow()" @utotal-change="onUTotalChange"></zp-uploader>
       </el-popover>
 
       <el-dropdown trigger="click" @command="onDropdown" @visible-change="onVisible">

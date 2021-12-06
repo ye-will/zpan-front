@@ -57,5 +57,7 @@
   ],
   "license": "GPL-3.0",
   "repository": "git@github.com:saltbo/zpan-front.git",
-  "dependencies": {}
+  "dependencies": {
+    "await-semaphore": "^0.1.3"
+  }
 }

@@ -162,5 +162,14 @@
     "S3": "亚马逊",
     "US3": "UColud",
     "USS": "又拍云"
+  },
+  "uploader": {
+    "file": "上传文件",
+    "folder": "上传文件夹",
+    "new-folder": "新建文件夹",
+    "upload-in-progress": "正在上传",
+    "upload-done": "上传完成",
+    "no-tasks": "暂无上传任务",
+    "upload-hint": "仅展示本次上传任务"
   }
 }

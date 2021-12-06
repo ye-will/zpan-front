@@ -18,20 +18,34 @@
 <template>
   <div style="height: calc(100% - 58px)">
     <el-row class="toolbar">
-      <el-dropdown size="small" style="margin-right: 10px" @command="onUploadSelect">
-        <el-button type="primary" size="small" icon="el-icon-upload" @click="onUploadSelect('file')">上传</el-button>
+      <el-button type="primary" size="small" icon="el-icon-upload" @click="onUploadSelect('file')">
+        {{ $t("uploader.file") }}
+      </el-button>
+      <el-button
+        type="primary"
+        size="small"
+        icon="el-icon-folder-opened"
+        @click="onUploadSelect('folder')"
+        :disabled="!$store.state.uploader.dirUploadSupport"
+      >
+        {{ $t("uploader.folder") }}
+      </el-button>
+      <el-button type="primary" size="small" icon="el-icon-folder-add" plain @click="openCreateDiglog()">
+        {{ $t("uploader.new-folder") }}
+      </el-button>
+      <!-- <el-dropdown size="small" style="margin-right: 10px" @command="onUploadSelect">
         <el-dropdown-menu slot="dropdown">
           <el-dropdown-item command="file">上传文件</el-dropdown-item>
           <el-dropdown-item command="folder">上传文件夹</el-dropdown-item>
         </el-dropdown-menu>
-      </el-dropdown>
-      <el-dropdown size="small">
+      </el-dropdown> -->
+      <!-- <el-dropdown size="small">
         <el-button type="primary" size="small" icon="el-icon-folder-add" plain>新建</el-button>
         <el-dropdown-menu slot="dropdown">
           <el-dropdown-item>新建文件</el-dropdown-item>
           <el-dropdown-item>新建文件夹</el-dropdown-item>
         </el-dropdown-menu>
-      </el-dropdown>
+      </el-dropdown> -->
       <!-- <el-button type="primary" size="medium" icon="el-icon-upload" @click="onUploadClick">{{ $t("disk.upload") }}</el-button> -->
       <!-- <el-button v-show="folderBtnShown" type="primary" size="medium" icon="el-icon-folder-add" @click="openCreateDiglog" plain>{{ $t("disk.folder") }}</el-button> -->
       <el-button-group v-show="selectedItems.length > 0" style="margin-left: 10px">
@@ -67,9 +81,18 @@ import { transfer } from "@/helper";
 import FileViewer from "@/components/FileViewer";
 import DialogMove from "./components/DialogMove";
 import DialogShare from "./components/DialogShare";
-import DialogUpload from "./components/DialogUpload";
+// import DialogUpload from "./components/DialogUpload";
 import DialogOutlink from "./components/DialogOutlink";
 import { CSMixin } from "@/libs/mixin";
+
+function delayExecutor(delay) {
+  let timeoutId = 0;
+  return (exec) => {
+    if (timeoutId > 0) clearTimeout(timeoutId)
+    timeoutId = setTimeout(() => exec(), delay);
+  }
+}
+
 export default {
   mixins: [CSMixin],
   data() {
@@ -86,6 +109,7 @@ export default {
         { name: "remove", title: this.$t("ftb.remove"), action: this.remove },
       ],
       selectedItems: [],
+      delay: delayExecutor(2000)
     };
   },
   watch: {
@@ -93,6 +117,9 @@ export default {
       this.query.type = newVal.query.type; // doc,image,audio,vedio
       this.folderBtnShown = !this.query.type;
     },
+    "$store.state.uploader.successCount"(newVal, oldVal) {
+      this.listRefresh()
+    }
   },
   computed: {
     rowButtons() {
@@ -135,7 +162,7 @@ export default {
       });
     },
     listRefresh() {
-      this.$refs.fexp.listRefresh();
+      this.delay(this.$refs.fexp.listRefresh)
     },
     openDownload(obj) {
       this.linkLoader(obj).then((link) => {
@@ -150,16 +177,11 @@ export default {
       this.$prompt(this.$t("tips.create-folder"), this.$t("create-folder"), {
         confirmButtonText: this.$t("op.confirm"),
         cancelButtonText: this.$t("op.cancel"),
-      }).then(({ value }) => {
-        let body = { sid: this.getSid(), name: value, dir: this.query.dir, is_dir: true };
-        this.$zpan.File.create(body).then((ret) => {
-          this.$message({
-            type: "success",
-            message: this.$t("msg.create-success"),
-          });
-          this.listRefresh();
-        });
-      });
+      }).then(({ value }) => this.$zpan.File.createDir(this.getSid(), value, this.query.dir))
+        .then((ret) => this.$message({
+          type: "success",
+          message: this.$t("msg.create-success"),
+        })).finally(() => this.listRefresh())
     },
     onUploadSelect(cmd) {
       this.$emit("upload-action", { type: cmd, sid: this.getSid(), dist: this.query.dir });

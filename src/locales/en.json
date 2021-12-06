@@ -148,5 +148,14 @@
     "S3": "AWSCloud",
     "US3": "UColud",
     "USS": "UPYun"
+  },
+  "uploader": {
+    "file": "Upload file",
+    "folder": "Upload folder",
+    "new-folder": "New folder",
+    "upload-in-progress": "In progress",
+    "upload-done": "Done",
+    "no-tasks": "No upload tasks",
+    "upload-hint": "Recent tasks only, Refresh to clear"
   }
 }
